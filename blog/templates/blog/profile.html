@@ -1,0 +1,112 @@
+{% extends 'blog/base.html' %}
+
+{% load static %}
+{% block content %}
+  <div class="container mt-5">
+    <h2>Profile of {{ user.username }}</h2>
+
+    <!-- Profile Information (View Mode) -->
+    <div id="view-mode">
+      <a href="{% url 'blog:profile' username=user.username %}">
+        {% if user.profile_picture %}
+            <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="profile-img rounded-circle" style="width: 80px; height: 80px;">
+        {% else %}
+        <img src="{% static 'blog/icons/default_profile.jpg' %}" alt="{{ user.username }}" class="profile-img rounded-circle" style="width: 80px; height: 80px;">
+        {% endif %}
+    </a>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>First Name:</strong> {{ user.first_name }}</p>
+        <p><strong>Last Name:</strong> {{ user.last_name }}</p>
+
+        <!-- Edit Profile Button (This button will trigger the toggle) -->
+        <button id="edit-profile-btn" class="btn-secondary" onclick="toggleEditMode()">Edit Profile</button>
+
+        <!-- Change Password Button -->
+        {% comment %} <button id="change-password-btn" class="btn-secondary" onclick="togglePasswordChangeForm()">Change Password</button> {% endcomment %}
+    </div>
+
+    <!-- Profile Information (Edit Mode) -->
+    <div id="edit-mode" style="display: none;">
+        <h3>Edit Your Profile</h3>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul>
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            
+            <!-- Save Changes Button -->
+            <button type="submit" class="btn-secondary">Save Changes</button>
+
+            <!-- Cancel Button to switch back to View Mode -->
+            <button type="button" class="btn-secondary" onclick="toggleEditMode()">Cancel</button>
+        </form>
+    </div>
+
+    <!-- Password Change Form -->
+    {% comment %} <div id="password-change-form" style="display: none;">
+        <h3>Change Password</h3>
+        <form method="POST">
+            {% csrf_token %}
+            {{ password_change_form.as_p }}
+            
+            {% if password_change_form.errors %}
+                <div class="alert alert-danger">
+                    <ul>
+                        {% for field in password_change_form %}
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            
+            <button type="submit" class="btn-secondary">Change Password</button>
+            <button type="button" class="btn-secondary" onclick="togglePasswordChangeForm()">Cancel</button>
+        </form>
+    </div> {% endcomment %}
+
+    <!-- Logout Button -->
+    <br><br>
+    <a class="  btn-secondary" href="{% url 'blog:logout' %}">Logout</a>
+  </div>
+
+  <!-- JavaScript to Toggle Between View, Edit, and Password Change Modes -->
+  <script>
+    function toggleEditMode() {
+        var viewMode = document.getElementById("view-mode");
+        var editMode = document.getElementById("edit-mode");
+
+        // Toggle visibility of the modes
+        if (viewMode.style.display === "none") {
+            viewMode.style.display = "block";
+            editMode.style.display = "none";
+        } else {
+            viewMode.style.display = "none";
+            editMode.style.display = "block";
+        }
+    }
+
+    function togglePasswordChangeForm() {
+        var passwordChangeForm = document.getElementById("password-change-form");
+        
+        // Toggle visibility of password change form
+        if (passwordChangeForm.style.display === "none") {
+            passwordChangeForm.style.display = "block";
+        } else {
+            passwordChangeForm.style.display = "none";
+        }
+    }
+  </script>
+{% endblock %}

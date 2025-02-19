@@ -1,28 +1,65 @@
 {% load static %}
+{% load tz %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
-        <title>Django Girls blog</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Django Girls Blog</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
         <link rel="stylesheet" href="{% static 'blog.css' %}">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext">
     </head>
     <body>
+        <!-- Header Section -->
         <header class="page-header">
-          <div class="container">
-            <a href="{% url 'post_new' %}" class="top-menu">
-                {% include './icons/file-earmark-plus.svg' %}</a>
-              <h1><a href="/">Django Girls Blog</a>
-              </h1>
-          </div>
+            <h1><a href="/">Django Girls Blog &  <a href="{% url 'polls:index' %}">Polls</a></a></h1>
+        
+        
+            <!-- Profile, New Post, Login/Signup Section -->
+            <div class="user-actions">
+                {% if request.user.is_authenticated %}
+                    <!-- New Post Button -->
+                    <a href="{% url 'blog:post_new' %}" class="btn-new-post">
+                        New Post
+                    </a>
+        
+                    <!-- Profile Picture with link to user profile -->
+                    {% load static %}
+                    <a href="{% url 'blog:profile' username=user.username %}" class="profile-link">
+                        <div class="profile-container text-center">
+                            {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}'s profile picture" class="profile-img rounded-circle" style="width: 50px; height: 50px;">
+                            {% else %}
+                                <img src="{% static 'blog/icons/default_profile.jpg' %}" alt="Default profile picture" class="profile-img rounded-circle" style="width: 50px; height: 50px;">
+                            {% endif %}
+                            <p style="color: white;">{{ user.username }}</p>
+                        </div>
+                    </a>
+                
+
+
+                {% else %}
+                    <!-- Login and Signup Buttons -->
+                    <a href="{% url 'blog:login' %}" class="btn1">Login</a>
+                    <a href="{% url 'blog:signup' %}" class="btn1">Sign Up</a>
+                {% endif %}
+            </div>
         </header>
+        
+
+        <!-- Main Content Section -->
         <main class="container">
             <div class="row">
                 <div class="col">
-                {% block content %}
-                {% endblock %}
+                    {% block content %}
+                    {% endblock %}
                 </div>
             </div>
         </main>
+
+        <!-- Optional: Include Bootstrap JS for dropdown functionality -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz4fnFO9gybGzHc4yW5rA/NREmOQ5smh6d1zOS2erQvK3ld8dIarwVS9lW" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-cuFhM3jEoU5HkLPXZK9otUqjOMQk8vOa0SjbNQpPR2aF9AqAqXqA0hwncn5g8ggG" crossorigin="anonymous"></script>
     </body>
 </html>

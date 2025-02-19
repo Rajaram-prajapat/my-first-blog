@@ -1,9 +1,30 @@
 {% extends 'blog/base.html' %}
 
 {% block content %}
-    <h2>New post</h2>
-    <form method="POST" class="post-form">{% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="save btn btn-secondary">Save</button>
-    </form>
+<h1>{% if post %}Edit Post{% else %}New Post{% endif %}</h1>
+
+  <!-- Display success or error messages -->
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="message {{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data" class="edit-post-form">
+    {% csrf_token %}
+    
+    <!-- Form fields rendered with paragraph tags for structure -->
+    <div class="form-group">
+      {{ form.as_p }}
+    </div>
+
+    <!-- Save Post Button -->
+    <button type="submit" name="save" class="btn-secondary">Save changes</button>
+
+    {% if post.slug %}
+      <a href="{% url 'blog:post_detail' slug=post.slug %}" class="btn-secondary">Cancel</a>
+    {% endif %}
+  </form>
 {% endblock %}

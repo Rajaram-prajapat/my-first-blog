@@ -1,20 +1,103 @@
 {% extends 'blog/base.html' %}
 
+{% load static %}
 {% block content %}
-    <article class="post">
-        <aside class="actions">
-            {% if user.is_authenticated %}
-            <a class="btn btn-secondary" href="{% url 'post_edit' pk=post.pk %}">
-                {% include './icons/pencil-fill.svg' %}
-            </a>
-            {% endif %}
-        </aside>
+<article class="post">
+    <header class="post-header">
+        <!-- Move the 'Edit Post' button to the left -->
+            <aside class="post-actions">
+                {% if user == post.author %}
+                    <a href="{% url 'blog:post_edit' slug=post.slug %}" class="btn-secondary">
+                         Edit Post
+                    </a>
+                {% endif %}
+            </aside>
+
         {% if post.published_date %}
-            <time class="date">
-                {{ post.published_date }}
-            </time>
+            <time class="post-date">{{ post.published_date|date:"F j, Y, g:i a" }}</time>
         {% endif %}
-        <h2>{{ post.title }}</h2>
+        <h2 class="post-title">{{ post.title }}</h2>
+
+        <!-- Display the author's profile picture if it exists -->
+        <div class="author-info">
+            {% if post.author.profile_picture %}
+                <img src="{{ post.author.profile_picture.url }}" alt="{{ post.author.username }}'s profile picture" class="profile-img rounded-circle" style="width: 50px; height: 50px;">
+            {% else %}
+            <img src="{% static 'blog/icons/default_profile.jpg' %}" alt="{{ post.author.username }}" class="profile-img rounded-circle" style="width: 50px; height: 50px;">
+            {% endif %}
+        </div>
+    
+        <p class="post-author">
+            Written by: <strong>{{ post.author.username }}</strong>
+        </p>
+        
+        <!-- Display Featured Image -->
+        {% if post.featured_image %}
+            <img class="post-featured" src="{{ post.featured_image.url }}" alt="{{ post.title }} Featured Image" style="width: 100%; height: auto;">
+        {% endif %}
+
+        <!-- Author's bio -->
+        {% if post.author.bio %}
+            <p class="author-bio">
+                Bio: {{ post.author.bio }}
+            </p>
+        {% endif %}
+    </header>
+
+    <section class="post-content">
         <p>{{ post.text|linebreaksbr }}</p>
-    </article>
+    </section>
+
+    <!-- Comments Section -->
+    <section class="comments-section">
+        <h3>Comments</h3>
+        {% if post.comments.all %}
+            <ul class="comments-list">
+                {% for comment in post.comments.all %}
+                    <li class="comment">
+                        <p class="comment-text">{{ comment.text }}</p>
+                        <small class="comment-author">By {{ comment.author }} on {{ comment.created_date|date:"F j, Y" }}</small>
+
+                        <!-- Display replies -->
+                        {% if comment.replies.all %}
+                            <h4>Replies:</h4>
+                            <ul class="replies-list">
+                                {% for reply in comment.replies.all %}
+                                    <li class="reply">
+                                        <p>{{ reply.text }}</p>
+                                        <small class="reply-author">By {{ reply.author }} on {{ reply.created_date|date:"F j, Y" }}</small>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+
+                        <!-- Reply form -->
+                        <form method="POST" class="reply-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                            <textarea name="reply_text" required placeholder="Write a reply..."></textarea>
+                            <button type="submit">Reply</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No comments yet. Be the first to leave a comment!</p>
+        {% endif %}
+    </section>
+
+    <!-- Comment Form Section -->
+    {% if user.is_authenticated %}
+    <section class="comment-form-section">
+    <h3>Leave a Comment</h3>
+    <form method="POST">
+        {% csrf_token %}
+        <textarea name="comment_text" required placeholder="Write a comment..."></textarea>
+        <button type="submit">Post Comment</button>
+    </form>
+    </section>
+    {% else %}
+        <p>You must be logged in to leave a comment. <a href="{% url 'blog:login' %}">Login</a></p>
+    {% endif %}
+</article>
 {% endblock %}

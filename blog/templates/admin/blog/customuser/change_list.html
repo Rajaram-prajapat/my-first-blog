@@ -1,0 +1,14 @@
+<!-- templates/admin/blog/post/changelist.html -->
+
+{% extends "admin/change_list.html" %}
+{% block content %}
+    <div class="module">
+        <h2>CSV Upload</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" name="csv_upload" class="default">Upload CSV</button>
+        </form>
+    </div>
+    {{ block.super }}  <!-- This will ensure the rest of the changelist view is rendered normally -->
+{% endblock %}

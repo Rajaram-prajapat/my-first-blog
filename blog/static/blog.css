@@ -1,77 +1,517 @@
-h1 a, h2 a {
-    color: #C25100;
-    font-family: 'Lobster';
-}
+/* General Body and Layout */
 body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
     padding-left: 15px;
+
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
+
+/* Header Styling */
 .page-header {
     background-color: #C25100;
-    margin: 0;
-    margin-bottom: 40px;
+    /* margin: 0; */
+    /* margin-bottom: 40px; */
     padding: 20px 20px 20px 40px;
+    border-radius: 8px 8px 0 0;
 }
 
 .page-header h1,
 .page-header h1 a,
 .page-header h1 a:visited,
 .page-header h1 a:active {
-    color: #ffffff;
+    color: #b8ebff;
     font-size: 36pt;
+    text-decoration: none;
+    font-family: 'Lobster', cursive;
+}
+/* Header Styling */
+.page-header {
+    background-color: #C25100; /* Header background color */
+    padding: 10px 20px; /* Add some padding */
+    color: white; /* Text color */
+    display: flex; /* Use flexbox for layout */
+    justify-content: space-between; /* Space between left and right elements */
+    align-items: center; /* Center content vertically */
+    flex-wrap: wrap; /* Allow wrapping for smaller screens */
+    border-radius: 0 0 10px 10px; /* Rounded bottom corners */
+}
+
+/* Left side (Title and Navigation Links) */
+.page-header h1 {
+    font-size: 2.5rem;
+    font-family: 'Lobster', cursive;
+    margin: 0; /* Remove default margin */
+    color: #b8ebff;
     text-decoration: none;
 }
 
-h1,
-h2,
-h3,
-h4 {
-    font-family: 'lobster',cursive;
+/* Right side (Profile, New Post, Login/Signup) */
+.page-header .user-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto; /* Push this section to the far right */
 }
 
+/* Navigation Links */
+.page-header .nav-links {
+    display: flex; /* Arrange the navigation links in a row */
+    gap: 20px; /* Add space between the links */
+    align-items: center; /* Center align the links vertically */
+}
+
+.page-header .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.page-header .nav-links a:hover,
+.page-header .nav-links a:focus {
+    color: #C25100; /* Hover color */
+    background-color: white;
+    padding: 5px 10px; /* Add padding to make it button-like */
+    border-radius: 5px; /* Rounded corners for the hover effect */
+}
+
+/* Profile Image Styling */
+.page-header .user-actions img.profile-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%; /* Makes profile image circular */
+}
+
+/* Buttons (New Post, Login, Signup) */
+.page-header .user-actions .btn1,
+.page-header .user-actions .btn-new-post {
+    padding: 10px 15px;
+    background-color: #f7fafd;
+    color: #000;
+    border: 2px solid #C25100;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+/* Form Container */
+form {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 350px;
+}
+
+/* Heading Styles */
+h1, h2, h3, h4 {
+    font-family: 'Lobster', cursive;
+    color: #333333;
+}
+
+/* Links */
+a {
+    color: #C25100;
+    text-decoration: none;
+}
+
+a:hover, a:focus {
+    color: #FFFFFF;
+    /* background-color: #C25100; */
+}
+
+/* Date Styling */
 .date {
     color: #828282;
+    font-size: 0.9em;
 }
 
+/* Save Button */
 .save {
     float: right;
 }
 
-.post-form textarea,
-.post-form input {
-    width: 100%;
+.page-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 30px;
 }
 
-.top-menu,
-.top-menu:hover,
-.top-menu:visited {
-    color: #ffffff;
-    float: right;
-    font-size: 26pt;
-    margin-right: 20px;
+/* Filter Form */
+.filters {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.filters form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 10px;
+}
+
+.filter-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.filter-group select,
+.filter-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button.btn-primary {
+    background-color: #fdfcfb; 
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button.btn-primary:hover {
+    background-color: #C25100;
+}
+
+/* Posts List */
+.posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
 }
 
 .post {
-    margin-bottom: 70px;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.post h2 a,
-.post h2 a:visited {
+.post-title {
+    font-size: 1.8rem;
     color: #000000;
+    margin-bottom: 10px;
 }
 
-.post > .date,
-.post > .actions {
-    float: right;
+.post-title a {
+    text-decoration: none;
+    color: #333;
 }
 
-.btn-secondary,
-.btn-secondary:visited {
+
+.post-thumbnail {
+    width: 300px;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.no-thumbnail {
+    color: #888;
+    font-style: italic;
+}
+
+.post-summary {
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.profile-img {
+    width: 50px;
+    height: 50px;
+    background-image: url('blog/templates/blog/icons/default-profile.jpg');
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #007bff; /* Optional: Adds a blue border */
+
+
+.user-actions a {
+    margin-right: 10px; /* Space between profile picture and other buttons */
+}
+
+.post-author {
+    font-weight: bold;
+    color: #333;
+}
+
+.post-meta {
+    margin-top: 10px;
+    color: #777;
+}
+
+.post-meta p {
+    font-size: 0.9rem;
+}
+
+.post-meta span {
+    font-weight: bold;
+}
+
+.post-date {
+    color: #888;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .filters form {
+        flex-direction: column;
+    }
+}
+
+/* Comment Section */
+.comments-section {
+    margin-top: 40px;
+}
+
+.comments-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.comment {
+    background-color: #f9f9f9;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comment-text {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.comment-author {
+    font-size: 0.9rem;
+    color: #777;
+}
+
+/* Reply Section */
+.replies-list {
+    margin-left: 20px;
+}
+
+.reply {
+    background-color: #f2f2f2;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+}
+
+.reply-author {
+    font-size: 0.85rem;
+    color: #777;
+}
+
+/* Reply Form */
+.reply-form textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.reply-form button {
+    color: rgb(15, 6, 6);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+
+/* Comment Form */
+.comment-form-section {
+    margin-top: 30px;
+}
+
+.comment-form-section textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.comment-form-section button {
+    color: rgb(7, 3, 3);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+
+/* For Unauthenticated Users */
+.comment-form-section p {
+    color: #555;
+}
+
+.comment-form-section a {
+    color: #C25100;
+    text-decoration: none;
+}
+
+}
+
+/* Post Actions (Edit Post) */
+.post-actions {
+    text-align: right;
+    margin-top: 20px;
+}
+
+.post-actions .btn-secondary {
+    /* background-color: #f0f0f0; */
+    border-color: #C25100;
+    color: #333;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1rem;
+    border: 2px solid #C25100;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .post-header {
+        padding: 15px;
+    }
+
+    .post-title {
+        font-size: 1.5rem;
+    }
+
+    .post-thumbnail {
+        width: 100%;
+    }
+
+    .comment-form-section textarea,
+    .reply-form textarea {
+        font-size: 1rem;
+    }
+}
+
+/* Button Styles */
+.btn-secondary {
     color: #C25100;
     background: none;
-    border-color: #C25100;
+    border: 2px solid #C25100;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
 }
 
 .btn-secondary:hover {
-    color: #FFFFFF;
-    background-color: #C25100;
+    border-color: #C25100;
+}
+
+/* Utility Classes */
+.float-right {
+    float: right;
+}
+
+.clearfix::after {
+    content: "";
+    display: block;
+    clear: both;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding-left: 10px;
+    }
+    .page-header h1 {
+        font-size: 28pt;
+    }
+    .post-form {
+        width: 100%;
+        max-width: 90%;
+    }
+    .top-menu {
+        font-size: 20pt;
+    }
+}
+
+.btn {
+    background-color: #ebe4e0;
+    border: none;
+    padding: 12px 16px;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.new-post-container {
+        
+    justify-content: flex-end;  /* Aligns the button to the right */
+    padding: 10px;
+    text-align: right;
+}
+
+.btn-new-post {
+    padding: 10px 20px;
+    background-color: #f7fafd;
+    color: rgb(0, 0, 0);
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 16px;
+    text-align: end;
+}
+
+.btn-new-post:hover {
+    background-color: #C25100;  /* Darker shade for hover effect */
+}
+
+.profile-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover; /* Makes sure the image is cropped correctly */
+    border: 2px solid #ddd; /* Optional: Adds a border around the image */
+  }
+
+.btn1 {
+    color: #C25100;
+    background: none;
+    border: 2px solid #C25100;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
 }
