@@ -365,3 +365,148 @@ def upload_csv_view(request):
         form = CsvUploadForm()
 
     return render(request, 'blog/upload_csv.html', {'form': form, 'message': message})
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import ValidationError
+
+from django.contrib.auth import authenticate
+from django.contrib.auth.forms import UserCreationForm
+from blog.models import CustomUser
+from blog.serializer import CustomUserSerializer, SignUpSerializer, LoginSerializer
+
+from rest_framework.authtoken.models import Token
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 10  # Set the page size (number of items per page)
+    page_size_query_param = 'page_size'  # Allow clients to customize the page size
+    max_page_size = 100  # Limit the maximum page size to 100
+
+
+class UserApi(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return CustomUser.objects.all()  # You can add filtering here
+
+    def get(self, request):
+        try:
+            users = self.get_queryset()  # Get the users
+            paginator = CustomPagination()
+            result_page = paginator.paginate_queryset(users, request)
+            serializer = CustomUserSerializer(result_page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': f'Error occurred while fetching users: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class SignupApi(APIView):
+    permission_classes = [AllowAny]  # Allow anyone to access the signup API
+
+    def post(self, request):
+        try:
+            # Log incoming request data for debugging (use logger in production)
+            logger.debug(f"Request Data: {request.data}")  # Replace print with logger
+
+            # Use the custom SignUpSerializer
+            serializer = SignUpSerializer(data=request.data)
+
+            if serializer.is_valid():
+                # Save the user and generate a token
+                user = serializer.save()
+
+                # Create or get the token for the user (Token-based authentication)
+                token, created = Token.objects.get_or_create(user=user)
+
+                # Return the token in the response
+                return Response({
+                    'status': 'success',
+                    'data': {
+                        'token': token.key,
+                        'username': user.username,
+                        'email': user.email,
+                    }
+                }, status=status.HTTP_201_CREATED)
+
+            # If validation fails, return a custom error response with only the message
+            logger.warning(f"Serializer Errors: {serializer.errors}")  # Use logger
+
+            # Combine all error messages into a single message
+            error_messages = " ".join([f"{key}: {value[0]}" for key, value in serializer.errors.items()])
+
+            return Response({
+                'status': 'error',
+                'message': error_messages
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            # Log the full error message for debugging
+            logger.error(f"Error during signup: {str(e)}")  # Use logger
+            return Response({
+                'status': 'error',
+                'message': f'Error occurred during signup: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class LoginApi(APIView):
+    permission_classes = [AllowAny]  # Allow anyone to access the login API
+
+    def post(self, request):
+        try:
+            # Use the LoginSerializer to validate the request data
+            serializer = LoginSerializer(data=request.data)
+
+            if serializer.is_valid():
+                # If the credentials are valid, get the user
+                user = serializer.validated_data['user']
+
+                # Create or retrieve the token for the user
+                token, created = Token.objects.get_or_create(user=user)
+
+                # Return the token in the response
+                return Response({
+                    'status': 'success',
+                    'data': {
+                        'token': token.key,
+                        'username': user.username,
+                        'email': user.email,
+                    }
+                }, status=status.HTTP_200_OK)
+
+            # Handle errors from serializer validation
+            error_message = None
+
+            # Check if the username is invalid
+            if 'username' in serializer.errors:
+                error_message = "Invalid username."
+
+            # Check if the password is incorrect (typically handled by authenticate)
+            elif 'password' in serializer.errors:
+                error_message = "Incorrect password."
+
+            # If both username and password errors are found
+            elif 'non_field_errors' in serializer.errors:
+                error_message = "Invalid username and/or incorrect password."
+
+            # Default case if we didn't capture any specific errors
+            if not error_message:
+                error_message = "Invalid credentials."
+
+            return Response({
+                'status': 'error',
+                'message': error_message
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            # Log any errors and return a 500 response
+            logger.error(f"Error during login: {str(e)}")  # Use logger
+            return Response({
+                'status': 'error',
+                'message': f'Error occurred during login: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

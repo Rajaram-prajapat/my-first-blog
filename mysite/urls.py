@@ -17,9 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 from blog import views
+from blog.views import UserApi, LoginApi, SignupApi
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('blog.urls')),
     path('polls/', include('polls.urls')),
+    path('user/', UserApi.as_view()),
+    path('loginapi/', LoginApi.as_view()),
+    path('signupapi/', SignupApi.as_view(), name='signup_api'),
+    path('api-auth/', include('rest_framework.urls')),
 ]

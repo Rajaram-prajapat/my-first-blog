@@ -1,10 +1,10 @@
 import csv
+from django.contrib import admin
 from io import StringIO
 from django import forms
 from .forms import PostForm, CsvUploadForm
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.contrib import admin
 from .models import Post, Category, Tag, Comment, Reply
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser
