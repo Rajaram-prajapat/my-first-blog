@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import get_user_model 
+from blog.views import LoginApi, SignupApi, ProfileApi, PostCreateAPIView, PostEditAPIView, CommentCreateAPIView, ReplyCreateAPIView, PostAPIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from rest_framework import routers, serializers, viewsets
 
@@ -41,4 +43,19 @@ urlpatterns = [
     path('tag/<slug:slug>/', views.tag_detail, name='tag_detail'),
     path('author/<str:author_username>/', views.posts_by_author, name='author_filter'), 
     path('upload-csv/', views.upload_csv_view, name='upload_csv'),
+    path('loginapi/', LoginApi.as_view()),
+    path('signupapi/', SignupApi.as_view()),
+    path('profileapi/', ProfileApi.as_view(),name='profile_see'),
+    path('profileapi/<str:username>/', ProfileApi.as_view(),name='profile_see'),
+    path('api-auth/', include('rest_framework.urls')),
+    path('postlist/', PostAPIView.as_view(), name='post-list'),
+    path('posts/', PostCreateAPIView.as_view(), name='post_create'),
+    path('posts/<slug:slug>/edit/', PostEditAPIView.as_view(), name='post_update'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('post/<int:post_id>/comment/', CommentCreateAPIView.as_view(), name='create_comment'),
+    path('comment/<int:comment_id>/reply/', ReplyCreateAPIView.as_view(), name='create_reply'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + router.urls
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

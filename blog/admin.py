@@ -78,7 +78,7 @@ def import_csv(modeladmin, request, queryset=None):
 
 # CustomAdmin for Post and CustomUser
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'category', 'published_date', 'slug')
+    list_display = ('id', 'title', 'author', 'category', 'published_date', 'slug')
     list_filter = ('category', 'tags', 'published_date')
     search_fields = ['title', 'author__username', 'category__name', 'tags__name']
     exclude = ('slug',)  # Prevent manual editing of the slug field
@@ -89,7 +89,7 @@ class PostAdmin(admin.ModelAdmin):
 # Admin view for CustomUser
 class CustomUserAdmin(admin.ModelAdmin):
     model = CustomUser
-    list_display = ('email', 'first_name', 'last_name', 'is_staff', 'is_active')
+    list_display = ('id', 'email', 'first_name', 'last_name', 'is_staff', 'is_active')
     search_fields = ['email', 'first_name', 'last_name']
     actions = [export_as_csv]  # CSV export action
 
@@ -116,18 +116,22 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 
 class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
     search_fields = ['name']  # Enables search functionality for category name
     actions = [export_as_csv]
 
 class TagAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
     search_fields = ['name']
     actions = [export_as_csv]
 
 class CommentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'text', 'author')
     search_fields=['author__username']
     actions = [export_as_csv]
 
 class ReplyAdmin(admin.ModelAdmin):
+    list_display = ('id', 'text', 'author')
     search_fields=['author__username']
     actions = [export_as_csv]
 

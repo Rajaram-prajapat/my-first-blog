@@ -27,21 +27,28 @@ class Post(models.Model):
     published_date = models.DateTimeField(blank=True, null=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name='posts', blank=True)
+    
 
-    # AutoSlugField to generate unique slugs based on title
     slug = AutoSlugField(populate_from='title', unique=True)
 
-    # Featured Image for the Post
     featured_image = models.ImageField(upload_to='featured_images/', blank=True, null=True)
-
-    # Thumbnail Image for the Post
     thumbnail_image = models.ImageField(upload_to='thumbnail_images/', blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        # Check if the title has changed
-        if not self.slug or self.title != self.__class__.objects.get(id=self.id).title:
-            self.slug = slugify(self.title)  # Re-generate slug based on the new title
+        # Only check for existing posts if it's an update (i.e., self.id is not None)
+        if self.id:
+            try:
+                existing_post = self.__class__.objects.get(id=self.id)
+                if self.title != existing_post.title:  # Check if the title has changed
+                    self.slug = slugify(self.title)  # Regenerate the slug if the title changes
+            except self.__class__.DoesNotExist:
+                # If the post doesn't exist (which should never happen here)
+                self.slug = slugify(self.title)
+        else:
+            # For new posts, just generate the slug based on the title
+            self.slug = slugify(self.title)
 
+        # Call the superclass save method to actually save the object
         super(Post, self).save(*args, **kwargs)
 
     def publish(self):
@@ -74,37 +81,6 @@ class Reply(models.Model):
 
     def __str__(self):
         return f"Reply by {self.author} on {self.comment}"
-    
-# class CustomUserManager(BaseUserManager):
-#     def create_user(self, email, password=None, **extra_fields):
-#         if not email:
-#             raise ValueError('The Email field must be set')
-#         email = self.normalize_email(email)
-#         user = self.model(email=email, **extra_fields)
-#         user.set_password(password)
-#         user.save(using=self._db)
-#         return user
-
-
-#     def create_superuser(self, email, password=None, **extra_fields):
-#         """Create and return a superuser."""
-#         extra_fields.setdefault('is_staff', True)
-#         extra_fields.setdefault('is_active', True)
-#         return self.create_user(email, password, **extra_fields)
-
-
-# class CustomUser(AbstractUser):
-#     """Custom User model with email as the unique identifier."""
-    
-#     email = models.EmailField(unique=True)
-#     bio = models.TextField(blank=True, null=True)
-#     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
-    
-#     objects = CustomUserManager()
-
-#     def __str__(self):
-#         return self.email
-# Create your models here.
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -131,7 +107,6 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
     # You can add additional fields to the user here if needed
     bio = models.TextField(blank=True, null=True)
-    # profile_picture = models.ImageField(upload_to='', null=True, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
 
     def save(self, *args, **kwargs):
@@ -141,11 +116,3 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
-    
-# from rest_framework.authtoken.models import Token
-# try:
-#     user = CustomUser.objects.create_user(email=None)
-#     token = Token.objects.create(user=user)
-#     print(token.key)  # Print the generated token key
-# except ValueError as e:
-#     print(f"Error: {e}")

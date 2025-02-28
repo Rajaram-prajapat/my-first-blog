@@ -63,7 +63,7 @@ def post_list(request):
             raise Http404("Invalid date format. Please use YYYY-MM-DD.")
 
     # Pagination
-    paginator = Paginator(posts, 10)  # Show 10 posts per page
+    paginator = Paginator(posts, 20)  # Show 10 posts per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -143,28 +143,41 @@ def post_detail(request, slug):
     comments = post.comments.filter(approved=True)
     
     # Handle comment submission
-    if request.method == 'POST' and 'comment_text' in request.POST:
-        text = request.POST['comment_text']
-        comment = Comment(post=post, author=request.user, text=text)
-        comment.save()
-        # Redirect to the same post detail page after submitting a comment
-        return HttpResponseRedirect(reverse('blog:post_detail', kwargs={'slug': post.slug}))
+    if request.method == 'POST':
+        if 'comment_text' in request.POST:
+            # Validate the comment text
+            text = request.POST['comment_text']
+            if not text.strip():
+                messages.error(request, 'Comment text cannot be empty.')
+                return redirect('blog:post_detail', slug=slug)
 
-    # Handle reply submission
-    if request.method == 'POST' and 'reply_text' in request.POST:
-        if not request.user.is_authenticated:
-            messages.error(request, 'You need to be logged in to reply to this comment.')
-            return HttpResponseRedirect(reverse('blog:post_detail', kwargs={'slug': post.slug}))
+            # Create and save the comment
+            comment = Comment(post=post, author=request.user, text=text)
+            comment.save()
+            # Optional: You can return a JsonResponse if you prefer Ajax behavior
+            return redirect('blog:post_detail', slug=slug)
         
-        comment_id = request.POST['comment_id']
-        comment = get_object_or_404(Comment, id=comment_id)
-        text = request.POST['reply_text']
-        
-        reply = Reply(comment=comment, author=request.user, text=text)
-        reply.save()
-        
-        # Redirect to the same post detail page after submitting a reply
-        return HttpResponseRedirect(reverse('blog:post_detail', kwargs={'slug': post.slug}))
+        elif 'reply_text' in request.POST and 'comment_id' in request.POST:
+            # Validate user authentication
+            if not request.user.is_authenticated:
+                messages.error(request, 'You need to be logged in to reply to this comment.')
+                return redirect('blog:post_detail', slug=slug)
+
+            comment_id = request.POST['comment_id']
+            comment = get_object_or_404(Comment, id=comment_id)
+
+            # Validate reply text
+            text = request.POST['reply_text']
+            if not text.strip():
+                messages.error(request, 'Reply text cannot be empty.')
+                return redirect('blog:post_detail', slug=slug)
+            
+            # Create and save the reply
+            reply = Reply(comment=comment, author=request.user, text=text)
+            reply.save()
+            # Optional: You can return a JsonResponse if you prefer Ajax behavior
+            return redirect('blog:post_detail', slug=slug)
+    
     # Render the post detail page with the post and comments
     return render(request, 'blog/post_detail.html', {'post': post, 'comments': comments})
 
@@ -372,12 +385,14 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
-
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.exceptions import NotFound
+from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm
 from blog.models import CustomUser
-from blog.serializer import CustomUserSerializer, SignUpSerializer, LoginSerializer
-
+from blog.serializer import SignUpSerializer, LoginSerializer, UserProfileSerializer, PostSerializer, Commentserializer, Replyserializer
+# from blog.serializer import CustomUserSerializer,
 from rest_framework.authtoken.models import Token
 
 
@@ -387,24 +402,6 @@ class CustomPagination(PageNumberPagination):
     max_page_size = 100  # Limit the maximum page size to 100
 
 
-class UserApi(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return CustomUser.objects.all()  # You can add filtering here
-
-    def get(self, request):
-        try:
-            users = self.get_queryset()  # Get the users
-            paginator = CustomPagination()
-            result_page = paginator.paginate_queryset(users, request)
-            serializer = CustomUserSerializer(result_page, many=True)
-            return paginator.get_paginated_response(serializer.data)
-        except Exception as e:
-            return Response({
-                'status': 'error',
-                'message': f'Error occurred while fetching users: {str(e)}'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class SignupApi(APIView):
     permission_classes = [AllowAny]  # Allow anyone to access the signup API
@@ -428,7 +425,6 @@ class SignupApi(APIView):
                 return Response({
                     'status': 'success',
                     'data': {
-                        'token': token.key,
                         'username': user.username,
                         'email': user.email,
                     }
@@ -455,58 +451,173 @@ class SignupApi(APIView):
 
 
 class LoginApi(APIView):
-    permission_classes = [AllowAny]  # Allow anyone to access the login API
+    permission_classes = [AllowAny]
 
     def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        # Authenticate the user
+        user = authenticate(username=username, password=password)
+        
+        if user is None:
+            return Response({"error": "Wrong password"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user.is_active:
+            return Response({"error": "Invalid Username."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Generate or get existing authentication token
+        token, _ = Token.objects.get_or_create(user=user)
+
+        # Return user details (excluding password) and token
+        return Response({
+            "status": "success",
+            "data": {
+                "token": token.key,
+                "username": user.username,
+                "email": user.email,
+            }
+        }, status=status.HTTP_200_OK)
+    
+class ProfileApi(APIView):
+    authentication_classes = [TokenAuthentication, BasicAuthentication]  # Ensure Token Authentication
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]  # Allows handling file uploads
+
+    def get(self, request, username=None):
         try:
-            # Use the LoginSerializer to validate the request data
-            serializer = LoginSerializer(data=request.data)
+            # If no username is provided, fetch the currently authenticated user, else fetch user by username
+            user = request.user if not username else get_user_model().objects.get(username=username)
 
-            if serializer.is_valid():
-                # If the credentials are valid, get the user
-                user = serializer.validated_data['user']
+            # Serialize the user data
+            serializer = UserProfileSerializer(user)
 
-                # Create or retrieve the token for the user
-                token, created = Token.objects.get_or_create(user=user)
+            # Return the serialized user profile data
+            return Response({
+                'status': 'success',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
 
-                # Return the token in the response
-                return Response({
-                    'status': 'success',
-                    'data': {
-                        'token': token.key,
-                        'username': user.username,
-                        'email': user.email,
-                    }
-                }, status=status.HTTP_200_OK)
-
-            # Handle errors from serializer validation
-            error_message = None
-
-            # Check if the username is invalid
-            if 'username' in serializer.errors:
-                error_message = "Invalid username."
-
-            # Check if the password is incorrect (typically handled by authenticate)
-            elif 'password' in serializer.errors:
-                error_message = "Incorrect password."
-
-            # If both username and password errors are found
-            elif 'non_field_errors' in serializer.errors:
-                error_message = "Invalid username and/or incorrect password."
-
-            # Default case if we didn't capture any specific errors
-            if not error_message:
-                error_message = "Invalid credentials."
-
+        except get_user_model().DoesNotExist:
+            # Handle the case when user doesn't exist
             return Response({
                 'status': 'error',
-                'message': error_message
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': 'User not found.'
+            }, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            # Log any errors and return a 500 response
-            logger.error(f"Error during login: {str(e)}")  # Use logger
+            # Log the exception for debugging purposes
+            logger.error(f"Error occurred while fetching the profile: {str(e)}", exc_info=True)
+
+            # Handle any other unexpected errors
             return Response({
                 'status': 'error',
-                'message': f'Error occurred during login: {str(e)}'
+                'message': f"Error occurred while fetching the profile: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def patch(self, request):
+        try:
+            # Get the currently authenticated user
+            user = request.user
+
+            # Serialize the user data with the incoming data (file included if present)
+            serializer = UserProfileSerializer(user, data=request.data, partial=True)
+
+            # Check if the serializer is valid
+            if serializer.is_valid():
+                # Save the updated user data
+                serializer.save()
+
+                # Return the updated data
+                return Response({
+                    'status': 'success',
+                    'data': serializer.data
+                }, status=status.HTTP_200_OK)
+            else:
+                # Return validation errors if the serializer is not valid
+                return Response({
+                    'status': 'error',
+                    'message': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            # Log the exception for debugging purposes
+            logger.error(f"Error occurred while updating the profile: {str(e)}", exc_info=True)
+
+            # Handle unexpected errors
+            return Response({
+                'status': 'error',
+                'message': f"Error occurred while updating the profile: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class PostAPIView(APIView):
+    def get(self,request):
+        posts = Post.objects.all()
+        paginator = PageNumberPagination()
+        paginated_posts = paginator.paginate_queryset(posts, request)
+        serializer = PostSerializer(paginated_posts, many=True)
+        return paginator.get_paginated_response(serializer.data)        
+
+class PostCreateAPIView(APIView):
+    authentication_classes = [TokenAuthentication, BasicAuthentication]  # Ensure Token Authentication
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Use the serializer to create a new post
+        serializer = PostSerializer(data=request.data, context={'request': request})
+
+        if serializer.is_valid():
+            serializer.save()  # Save the new post, which automatically assigns the author
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PostEditAPIView(APIView):
+    authentication_classes = [TokenAuthentication, BasicAuthentication]  # Ensure Token Authentication
+    permission_classes = [IsAuthenticated]
+    def put(self, request, slug, *args, **kwargs):
+        post = get_object_or_404(Post, slug=slug)
+        serializer = PostSerializer(post, data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)  # Return 200 OK for successful update
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, slug, *args, **kwargs):
+        post = get_object_or_404(Post, slug=slug)
+        serializer = PostSerializer(post, data=request.data, partial=True)  # Use partial=True for PATCH
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)  # Return 200 OK for successful update
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class CommentCreateAPIView(APIView):
+    authentication_classes = [TokenAuthentication, BasicAuthentication]  # Ensure Token Authentication
+    permission_classes = [IsAuthenticated]  # Ensure user is authenticated
+
+    def post(self, request, *args, **kwargs):
+        post_id = kwargs.get('post_id')
+        post = get_object_or_404(Post, id=post_id)  # Get the post or return 404
+
+        serializer = Commentserializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(post=post, author=request.user, approved=False)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReplyCreateAPIView(APIView):
+    authentication_classes = [TokenAuthentication, BasicAuthentication]  # Ensure Token Authentication
+    permission_classes = [IsAuthenticated]  # Ensure user is authenticated
+
+    def post(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)  # Get the comment or return 404
+
+        serializer = Replyserializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(comment=comment, author=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
